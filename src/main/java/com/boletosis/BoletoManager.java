@@ -26,16 +26,16 @@ public class BoletoManager extends JFrame {
     private final Font FONT_TABELA = new Font("SansSerif", Font.BOLD, 14);
     private final Font FONT_HEADER = new Font("SansSerif", Font.BOLD, 16);
 
-    private final Color COLOR_PRIMARY = new Color(41, 128, 185);
-    private final Color COLOR_SUCCESS = new Color(39, 174, 96);
-    private final Color COLOR_DANGER = new Color(192, 57, 43);
+    private final Color COLOR_PRIMARY = new Color(41, 128, 185); // Azul
+    private final Color COLOR_SUCCESS = new Color(39, 174, 96);  // Verde
+    private final Color COLOR_DANGER = new Color(192, 57, 43);   // Vermelho
     private final Color COLOR_BG = new Color(236, 240, 241);
 
     private JTextField txtFilterMonth = new JTextField(3);
     private JTextField txtFilterDay = new JTextField(3);
 
     public BoletoManager() {
-        setTitle("GESTOR FINANCEIRO");
+        setTitle("GESTOR FINANCEIRO - EDUARDO");
         setSize(1200, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         getContentPane().setBackground(COLOR_BG);
@@ -46,7 +46,6 @@ public class BoletoManager extends JFrame {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("SansSerif", Font.BOLD, 16));
 
-        // Configurando as duas tabelas
         setupTables();
 
         tabbedPane.addTab(" 🕒 PENDENTES / VENCIDOS ", new JScrollPane(tablePendentes));
@@ -64,10 +63,8 @@ public class BoletoManager extends JFrame {
 
     private void setupTables() {
         String[] columns = {"NOME", "EMPRESA", "VALOR (R$)", "VENCIMENTO", "STATUS"};
-
         modelPendentes = createModel(columns);
         modelPagos = createModel(columns);
-
         tablePendentes = createStyledTable(modelPendentes);
         tablePagos = createStyledTable(modelPagos);
     }
@@ -84,7 +81,7 @@ public class BoletoManager extends JFrame {
         t.setRowHeight(40);
         t.setFont(FONT_TABELA);
 
-        // Estilo do Cabeçalho
+        // --- CORREÇÃO DO CABEÇALHO ---
         JTableHeader header = t.getTableHeader();
         header.setPreferredSize(new Dimension(header.getWidth(), 50));
         DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
@@ -95,16 +92,18 @@ public class BoletoManager extends JFrame {
                 setForeground(Color.WHITE);
                 setFont(FONT_HEADER);
                 setHorizontalAlignment(JLabel.CENTER);
+                setBorder(BorderFactory.createLineBorder(new Color(44, 62, 80)));
                 return this;
             }
         };
         for (int i = 0; i < t.getColumnCount(); i++) t.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
 
-        // Centralização e Cores
+        // Centralização do corpo
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for (int i = 0; i < t.getColumnCount() - 1; i++) t.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
 
+        // Coluna de Status
         t.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -128,6 +127,7 @@ public class BoletoManager extends JFrame {
         JPanel southPanel = new JPanel(new BorderLayout(10, 10));
         southPanel.setOpaque(false);
 
+        // Filtros
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterPanel.setOpaque(false);
         filterPanel.add(new JLabel("FILTRAR DIA:")); filterPanel.add(txtFilterDay);
@@ -136,6 +136,7 @@ public class BoletoManager extends JFrame {
         JButton btnClear = new JButton("LIMPAR");
         filterPanel.add(btnFilter); filterPanel.add(btnClear);
 
+        // Formulário
         JPanel formPanel = new JPanel(new GridLayout(2, 4, 10, 5));
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -149,12 +150,17 @@ public class BoletoManager extends JFrame {
         formPanel.add(new JLabel("VALOR:")); formPanel.add(new JLabel("VENCIMENTO:"));
         formPanel.add(txtName); formPanel.add(txtCompany); formPanel.add(txtValue); formPanel.add(txtDate);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        // Botões
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         buttonPanel.setOpaque(false);
+
+        JButton btnImport = createStyledButton("IMPORTAR .DAT", Color.DARK_GRAY);
+        JButton btnExport = createStyledButton("EXPORTAR BACKUP", Color.DARK_GRAY);
         JButton btnDelete = createStyledButton("EXCLUIR", COLOR_DANGER);
         JButton btnPay = createStyledButton("MARCAR PAGO", COLOR_SUCCESS);
         JButton btnAdd = createStyledButton("CADASTRAR", COLOR_PRIMARY);
 
+        buttonPanel.add(btnImport); buttonPanel.add(btnExport);
         buttonPanel.add(btnDelete); buttonPanel.add(btnPay); buttonPanel.add(btnAdd);
 
         southPanel.add(filterPanel, BorderLayout.NORTH);
@@ -162,55 +168,28 @@ public class BoletoManager extends JFrame {
         southPanel.add(buttonPanel, BorderLayout.SOUTH);
         add(southPanel, BorderLayout.SOUTH);
 
-        // Ações
-        // Ação de Cadastrar
+        // --- EVENTOS ---
+
         btnAdd.addActionListener(e -> {
             try {
-                // 1. Converte o texto para número
                 double val = Double.parseDouble(txtValue.getText().replace(",", "."));
-
-                // 2. VALIDAÇÃO: Bloqueia zero ou negativos
                 if (val <= 0) {
-                    JOptionPane.showMessageDialog(this,
-                            "⚠️ VALOR INVÁLIDO!\nO valor do boleto deve ser maior que R$ 0,00.",
-                            "ERRO DE CADASTRO",
-                            JOptionPane.ERROR_MESSAGE);
-                    txtValue.requestFocus();
-                    return; // Interrompe o código aqui para não cadastrar
+                    JOptionPane.showMessageDialog(this, "⚠️ VALOR DEVE SER MAIOR QUE ZERO!", "ERRO", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
-
-                // 3. Validação de data e criação do objeto
                 LocalDate date = LocalDate.parse(txtDate.getText(), formatter);
-
-                Boleto b = new Boleto(
-                        txtName.getText().toUpperCase().trim(),
-                        txtCompany.getText().toUpperCase().trim(),
-                        date,
-                        val
-                );
-
-                // 4. Adiciona e salva
-                boletos.add(b);
-                updateTable();
-                salvarDados();
-
-                // Limpa os campos
+                boletos.add(new Boleto(txtName.getText().toUpperCase().trim(), txtCompany.getText().toUpperCase().trim(), date, val));
+                updateTable(); salvarDados();
                 txtName.setText(""); txtCompany.setText(""); txtValue.setText(""); txtDate.setValue(null);
                 txtName.requestFocus();
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "ERRO: Digite um valor numérico válido!");
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "ERRO NOS DADOS: Verifique a data ou campos vazios!");
-            }
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "ERRO NOS DADOS!"); }
         });
 
         btnPay.addActionListener(e -> {
             int row = tablePendentes.getSelectedRow();
             if (row >= 0) {
                 String nome = (String) modelPendentes.getValueAt(row, 0);
-                boletos.stream().filter(b -> b.getName().equalsIgnoreCase(nome) && !b.isPaid())
-                        .findFirst().ifPresent(b -> b.setPaid(true));
+                boletos.stream().filter(b -> b.getName().equalsIgnoreCase(nome) && !b.isPaid()).findFirst().ifPresent(b -> b.setPaid(true));
                 updateTable(); salvarDados();
             } else {
                 JOptionPane.showMessageDialog(this, "SELECIONE UM BOLETO NA ABA DE PENDENTES!");
@@ -218,16 +197,39 @@ public class BoletoManager extends JFrame {
         });
 
         btnDelete.addActionListener(e -> {
-            // Verifica qual tabela está com algo selecionado
             int rowP = tablePendentes.getSelectedRow();
-            int rowOK = tablePagos.getSelectedRow();
-
-            if (rowP >= 0 || rowOK >= 0) {
+            int rowK = tablePagos.getSelectedRow();
+            if (rowP >= 0 || rowK >= 0) {
                 if (JOptionPane.showConfirmDialog(this, "DESEJA EXCLUIR?") == 0) {
-                    String nome = (rowP >= 0) ? (String) modelPendentes.getValueAt(rowP, 0) : (String) modelPagos.getValueAt(rowOK, 0);
-                    boletos.removeIf(b -> b.getName().equalsIgnoreCase(nome));
+                    String n = (rowP >= 0) ? (String) modelPendentes.getValueAt(rowP, 0) : (String) modelPagos.getValueAt(rowK, 0);
+                    boletos.removeIf(b -> b.getName().equalsIgnoreCase(n));
                     updateTable(); salvarDados();
                 }
+            }
+        });
+
+        btnExport.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            String data = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            fc.setSelectedFile(new File("BACKUP_BOLETOS_" + data + ".dat"));
+            if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fc.getSelectedFile()))) {
+                    oos.writeObject(boletos);
+                    JOptionPane.showMessageDialog(this, "BACKUP EXPORTADO!");
+                } catch (IOException ex) { ex.printStackTrace(); }
+            }
+        });
+
+        btnImport.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()))) {
+                    List<Boleto> novos = (List<Boleto>) ois.readObject();
+                    int op = JOptionPane.showConfirmDialog(this, "SUBSTITUIR DADOS ATUAIS?");
+                    if (op == JOptionPane.YES_OPTION) boletos = novos;
+                    else if (op == JOptionPane.NO_OPTION) boletos.addAll(novos);
+                    updateTable(); salvarDados();
+                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "ARQUIVO INVÁLIDO!"); }
             }
         });
 
@@ -238,30 +240,22 @@ public class BoletoManager extends JFrame {
     public void updateTable() {
         modelPendentes.setRowCount(0);
         modelPagos.setRowCount(0);
-
         Collections.sort(boletos, Comparator.comparing(Boleto::getDueDate));
-
         for (Boleto b : boletos) {
             boolean mDay = txtFilterDay.getText().isEmpty() || String.valueOf(b.getDueDate().getDayOfMonth()).equals(txtFilterDay.getText());
             boolean mMonth = txtFilterMonth.getText().isEmpty() || String.valueOf(b.getDueDate().getMonthValue()).equals(txtFilterMonth.getText());
-
             if (mDay && mMonth) {
-                Object[] rowData = {
-                        b.getName().toUpperCase(), b.getCompany().toUpperCase(),
-                        String.format("%.2f", b.getValue()), b.getFormattedDate(), b.getStatus().toUpperCase()
-                };
-
-                if (b.isPaid()) modelPagos.addRow(rowData);
-                else modelPendentes.addRow(rowData);
+                Object[] row = { b.getName().toUpperCase(), b.getCompany().toUpperCase(), String.format("%.2f", b.getValue()), b.getFormattedDate(), b.getStatus().toUpperCase() };
+                if (b.isPaid()) modelPagos.addRow(row);
+                else modelPendentes.addRow(row);
             }
         }
     }
 
-    // Métodos auxiliares (Salvar, Carregar, etc) permanecem iguais...
     private void salvarDados() { try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("boletos.dat"))) { oos.writeObject(boletos); } catch (IOException e) { e.printStackTrace(); } }
-    private void carregarDados() { File arquivo = new File("boletos.dat"); if (arquivo.exists()) { try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(arquivo))) { boletos = (List<Boleto>) ois.readObject(); updateTable(); } catch (Exception e) { e.printStackTrace(); } } }
+    private void carregarDados() { File f = new File("boletos.dat"); if (f.exists()) { try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) { boletos = (List<Boleto>) ois.readObject(); updateTable(); } catch (Exception e) { e.printStackTrace(); } } }
     private void verificarAlertasDoDia() { LocalDate hoje = LocalDate.now(); long qtd = boletos.stream().filter(b -> b.getDueDate().equals(hoje) && !b.isPaid()).count(); double total = boletos.stream().filter(b -> b.getDueDate().equals(hoje) && !b.isPaid()).mapToDouble(Boleto::getValue).sum(); if (qtd > 0) { JOptionPane.showMessageDialog(this, String.format("🔔 HOJE: %d BOLETOS VENCENDO.\nTOTAL: R$ %.2f", qtd, total), "AVISO", JOptionPane.WARNING_MESSAGE); } }
-    private JFormattedTextField createDateField() { try { MaskFormatter mask = new MaskFormatter("##/##/####"); mask.setPlaceholderCharacter('_'); return new JFormattedTextField(mask); } catch (ParseException e) { return new JFormattedTextField(); } }
+    private JFormattedTextField createDateField() { try { MaskFormatter m = new MaskFormatter("##/##/####"); m.setPlaceholderCharacter('_'); return new JFormattedTextField(m); } catch (ParseException e) { return new JFormattedTextField(); } }
     private JButton createStyledButton(String text, Color color) { JButton btn = new JButton(text); btn.setBackground(color); btn.setForeground(Color.WHITE); btn.setOpaque(true); btn.setBorderPainted(false); btn.setFont(new Font("SansSerif", Font.BOLD, 14)); btn.setPreferredSize(new Dimension(180, 45)); btn.setCursor(new Cursor(Cursor.HAND_CURSOR)); return btn; }
 
     public static void main(String[] args) {
