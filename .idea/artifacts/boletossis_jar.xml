@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="boletossis:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/boletossis_jar</output-path>
+    <root id="archive" name="boletossis.jar">
+      <element id="module-output" name="boletossis" />
+    </root>
+  </artifact>
+</component>
