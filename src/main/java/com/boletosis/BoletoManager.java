@@ -82,6 +82,7 @@ public class BoletoManager extends JFrame {
         JTable t = new JTable(model);
         t.setRowHeight(40);
         t.setFont(FONT_TABELA);
+        t.getTableHeader().setReorderingAllowed(false);
 
         // --- CORREÇÃO DO CABEÇALHO ---
         JTableHeader header = t.getTableHeader();
