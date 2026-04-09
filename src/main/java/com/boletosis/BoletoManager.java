@@ -1,6 +1,8 @@
 package com.boletosis;
 
 import com.boletosis.model.Boleto;
+import com.boletosis.service.RelatorioService;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -159,6 +161,8 @@ public class BoletoManager extends JFrame {
         JButton btnDelete = createStyledButton("EXCLUIR", COLOR_DANGER);
         JButton btnPay = createStyledButton("MARCAR PAGO", COLOR_SUCCESS);
         JButton btnAdd = createStyledButton("CADASTRAR", COLOR_PRIMARY);
+        JButton btnPrint = createStyledButton("RELATÓRIO", new Color(142, 68, 173)); // Roxo
+        buttonPanel.add(btnPrint);
 
         buttonPanel.add(btnImport); buttonPanel.add(btnExport);
         buttonPanel.add(btnDelete); buttonPanel.add(btnPay); buttonPanel.add(btnAdd);
@@ -230,6 +234,20 @@ public class BoletoManager extends JFrame {
                     else if (op == JOptionPane.NO_OPTION) boletos.addAll(novos);
                     updateTable(); salvarDados();
                 } catch (Exception ex) { JOptionPane.showMessageDialog(this, "ARQUIVO INVÁLIDO!"); }
+            }
+        });
+        btnPrint.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(this, "INFORME O MES (1-12):");
+            if (input != null && !input.isEmpty()) {
+                try {
+                    int mes = Integer.parseInt(input);
+                    // CHAMADA LIMPA PARA O SERVIÇO
+                    RelatorioService.gerarRelatorioProtegido(boletos, mes);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "DIGITE APENAS NUMEROS!");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "ERRO AO GERAR: " + ex.getMessage());
+                }
             }
         });
 
