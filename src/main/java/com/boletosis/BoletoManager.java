@@ -35,7 +35,7 @@ public class BoletoManager extends JFrame {
     private JTextField txtFilterDay = new JTextField(3);
 
     public BoletoManager() {
-        setTitle("GESTOR FINANCEIRO - EDUARDO");
+        setTitle("GESTOR FINANCEIRO");
         setSize(1200, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         getContentPane().setBackground(COLOR_BG);
