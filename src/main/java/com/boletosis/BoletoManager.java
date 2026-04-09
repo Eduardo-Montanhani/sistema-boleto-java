@@ -37,6 +37,15 @@ public class BoletoManager extends JFrame {
     private JTextField txtFilterDay = new JTextField(3);
 
     public BoletoManager() {
+
+        try {
+            // Coloque uma imagem .png ou .jpg na pasta src/main/resources (ou na raiz do projeto)
+            ImageIcon icon = new ImageIcon(getClass().getResource("/icon.png"));
+            setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.out.println("Ícone não encontrado!");
+        }
+
         setTitle("GESTOR FINANCEIRO");
         setSize(1200, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -144,9 +153,9 @@ public class BoletoManager extends JFrame {
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        JTextField txtName = new JTextField();
-        JTextField txtCompany = new JTextField();
-        JTextField txtValue = new JTextField();
+        JTextField txtName = createStyledTextField("Nome do boleto");
+        JTextField txtCompany = createStyledTextField("Empresa");
+        JTextField txtValue = createMoneyField();
         JFormattedTextField txtDate = createDateField();
 
         formPanel.add(new JLabel("NOME:")); formPanel.add(new JLabel("EMPRESA:"));
@@ -274,11 +283,85 @@ public class BoletoManager extends JFrame {
     private void salvarDados() { try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("boletos.dat"))) { oos.writeObject(boletos); } catch (IOException e) { e.printStackTrace(); } }
     private void carregarDados() { File f = new File("boletos.dat"); if (f.exists()) { try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) { boletos = (List<Boleto>) ois.readObject(); updateTable(); } catch (Exception e) { e.printStackTrace(); } } }
     private void verificarAlertasDoDia() { LocalDate hoje = LocalDate.now(); long qtd = boletos.stream().filter(b -> b.getDueDate().equals(hoje) && !b.isPaid()).count(); double total = boletos.stream().filter(b -> b.getDueDate().equals(hoje) && !b.isPaid()).mapToDouble(Boleto::getValue).sum(); if (qtd > 0) { JOptionPane.showMessageDialog(this, String.format("🔔 HOJE: %d BOLETOS VENCENDO.\nTOTAL: R$ %.2f", qtd, total), "AVISO", JOptionPane.WARNING_MESSAGE); } }
-    private JFormattedTextField createDateField() { try { MaskFormatter m = new MaskFormatter("##/##/####"); m.setPlaceholderCharacter('_'); return new JFormattedTextField(m); } catch (ParseException e) { return new JFormattedTextField(); } }
     private JButton createStyledButton(String text, Color color) { JButton btn = new JButton(text); btn.setBackground(color); btn.setForeground(Color.WHITE); btn.setOpaque(true); btn.setBorderPainted(false); btn.setFont(new Font("SansSerif", Font.BOLD, 14)); btn.setPreferredSize(new Dimension(180, 45)); btn.setCursor(new Cursor(Cursor.HAND_CURSOR)); return btn; }
+
+    private JFormattedTextField createDateField() {
+        try {
+            MaskFormatter m = new MaskFormatter("##/##/####");
+            m.setPlaceholderCharacter('_');
+            JFormattedTextField field = new JFormattedTextField(m);
+
+            field.setFont(new Font("SansSerif", Font.PLAIN, 14));
+            field.setPreferredSize(new Dimension(200, 40));
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+                    BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            ));
+
+            return field;
+        } catch (ParseException e) {
+            return new JFormattedTextField();
+        }
+    }
 
     public static void main(String[] args) {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
         SwingUtilities.invokeLater(BoletoManager::new);
+    }
+    private JTextField createStyledTextField(String placeholder) {
+        JTextField field = new JTextField();
+        field.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        field.setPreferredSize(new Dimension(200, 40));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        field.setBackground(Color.WHITE);
+
+        // Placeholder fake
+        field.setText(placeholder);
+        field.setForeground(Color.GRAY);
+
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (field.getText().equals(placeholder)) {
+                    field.setText("");
+                    field.setForeground(Color.BLACK);
+                }
+                field.setBorder(BorderFactory.createLineBorder(new Color(41, 128, 185), 2, true));
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (field.getText().isEmpty()) {
+                    field.setText(placeholder);
+                    field.setForeground(Color.GRAY);
+                }
+                field.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
+            }
+        });
+
+        return field;
+    }
+    private JTextField createMoneyField() {
+        JTextField field = createStyledTextField("0.00");
+
+        field.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                char c = e.getKeyChar();
+
+                // Permite números, ponto e vírgula
+                if (!Character.isDigit(c) && c != '.' && c != ',') {
+                    e.consume();
+                }
+
+                // Evita mais de um separador
+                if ((c == '.' || c == ',') && field.getText().contains(".")) {
+                    e.consume();
+                }
+            }
+        });
+
+        return field;
     }
 }
